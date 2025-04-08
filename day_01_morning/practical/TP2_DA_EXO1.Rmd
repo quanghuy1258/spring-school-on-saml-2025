@@ -1,0 +1,394 @@
+---
+title: "Practical 2 - Discriminant analysis"
+author: "Agnès LAGNOUX & Nicolas SAVY"
+date: ""
+output: 
+  pdf_document:
+    highlight: tango  # Vous pouvez tester d'autres thèmes : kate, monochrome, etc.
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, out.width = "75%")
+```
+
+# Exercise 1
+
+The objective of this exercise is to
+
+- discover linear and quadratic discriminant analysis
+
+- program quadratic discriminant analysis
+
+- discover functions **lda** and **qda** of the **caret** package.
+
+In this exercise, we will work on the simulated data from the previous sheet contained in the ***synth_train.txt*** file.
+
+## Loading libraries and importing data
+
+Loading common packages for manipulating LDA and QDA.
+
+```{r}
+library(caret)
+library(MASS)
+library(ggplot2)
+```
+
+Load the training dataset ***synth_train.txt*** into R.
+Display the first data of the training sample.
+
+```{r}
+train <- read.table(file="synth_train.txt", header=TRUE)
+dim(train)
+head(train)
+```
+
+Transformation of $Y$ into a two-modality **factor** type variable.
+
+```{r}
+train$y
+train$y = as.factor(train$y)
+train$y
+```
+
+Plot the data using the **ggplot2** package.
+
+```{r}
+Xtrain <- train[,-1] # explanatory variables
+Ytrain <- train$y # class variable
+
+# Combine training data into a data frame
+train_data <- data.frame(X1 = Xtrain[,1], X2 = Xtrain[,2], Class = factor(Ytrain))
+
+# Plot using ggplot2
+ggplot(train_data, aes(x = X1, y = X2, shape = Class, color = Class)) +
+geom_point(size = 3) +
+# Color selection
+scale_color_manual(values = c("red", "blue"), name = "Class") +
+# Shape selection (triangles and circles)
+scale_shape_manual(values = c(16, 17), name = "Class") +
+labs(title = "Visualization of classes", x = "X1", y = "X2") +
+theme_minimal() +
+theme(legend.position = "top")
+```
+
+## Quadratic Discriminant Analysis by Hand
+
+In **quadratic discriminant analysis**, we make the parametric Gaussian assumption that
+
+$$
+X \mid Y=k \sim \mathcal{N}\left(\mu_{k}, \Sigma_{k}\right);
+$$
+
+in other words
+
+$$        
+f(x \mid Y=k)=\frac{1}{(2 \pi)^{p / 2}\left|\Sigma_{k}\right|^{1 / 2}} \exp \left(-\frac{1}{2}\left(x-\mu_{k}\right)^{T} \Sigma_{k}^{-1}\left(x-\mu_{k}\right)\right)
+$$
+
+The unknown parameters $\mu_k$ and $\Sigma_k$ and the a priori probabilities
+
+$$
+\pi_k=\mathbb{P}(Y=k)
+$$
+
+for $k=1.2$ are estimated by maximum likelihood by:
+
+$$
+\widehat \pi_k = \frac{n_k}{n}, \qquad 
+\widehat \mu_k = \frac{1}{n_k} \sum_{i; y_i=k} x_i,\qquad  \widehat \Sigma_k=\frac{1}{n_k} \sum_{i; y_i=k}(x_i-\widehat \mu_k)^\top (x_i-\widehat \mu_k).
+$$
+
+We will estimate these parameters on these parameters on the training data.
+
+```{r}
+n <- nrow(Xtrain)
+# class 1
+ind1 <- which(Ytrain==1)
+n1 <- length(ind1)
+pi1 <- n1/n
+mu1 <- colMeans(Xtrain[ind1,])
+sigma1 <- var(Xtrain[ind1,])*(n1-1)/n1
+
+# class 2
+ind2 <- which(Ytrain==2)
+n2 <- length(ind2)
+pi2 <- n2/n
+mu2 <- colMeans(Xtrain[ind2,])
+sigma2 <- var(Xtrain[ind2,])*(n2-1)/n2
+```
+
+The Bayes decision rule (predicting the most probable class a posteriori) is then written:
+
+$$
+g(x) = argmax_{k\in \{1,2\}}\,Q_k(x)
+$$ 
+with
+$$ 
+Q_k(x)=-\frac 12 \log |\Sigma_k|^{-1} - \frac 12 (x-\mu_k)^\top \Sigma_k^{-1}(x-\mu_k)+\log \pi_k.
+$$
+
+$Q_k$ is called **quadratic discriminant function**.
+
+Calculate $Q_{1}(x)$ and $Q_{2}(x)$ and verify that $x=(-1,1)$ is indeed assigned to class 2.
+
+```{r}
+x = c(-1,1)
+names(x) = c("x1","x2")
+Q1 <- - 1/2*log(det(sigma1))-1/2*t(x-mu1) %*% solve(sigma1) %*% (x-mu1) +log(pi1)
+Q2 <- - 1/2*log(det(sigma2)) - 1/2*t(x-mu2) %*% solve(sigma2) %*% (x-mu2) +log(pi2)
+Q1
+Q2
+```
+
+We therefore have $Q_1(x) < Q_2(x)$ so we predict class 2 for x=(-1,1).
+This is consistent.
+
+We also know that the posterior probabilities of the classes are calculated as follows:
+
+$$
+\mathbb{P}(Y=k\vert X=x)= \frac{\exp (Q_k(x))}{\sum_{\ell=1}^2 \exp (Q_\ell(x))}.
+$$ 
+
+Estimate the posterior probabilities for $x = (-1, 1)$.
+```{r}
+prob1 <- exp(Q1)/(exp(Q1)+exp(Q2))
+prob1
+prob2 <- exp(Q2)/(exp(Q1)+exp(Q2))
+prob2
+```
+
+$\mathbb{P}(Y=2/X=(-1,1)) > \mathbb{P}(Y=1/X=(-1,1))$ so we predict class 2 for $x=(-1,1)$.
+This is consistent and of course equivalent to the prediction with $Q_1(x)$ and $Q_2(x)$.
+
+## Quadratic discriminant analysis with caret
+
+Now use the functions **qda** and **predict** to predict the class of the point $x=(-1,1)$ and estimate their posterior probabilities.
+Check that you find the results obtained previously.
+
+### Training the model on the train data
+
+```{r}
+qda_model <- train(y ~ ., 
+                   data = train, 
+                   method = "qda")
+```
+
+### Prediction of the point $x=(-1,1)$
+
+```{r}
+x1 = -1
+x2 = 1
+x = c(x1,x2)
+head(predict(qda_model, x, "raw"))
+head(predict(qda_model, x, "prob"))
+```
+
+
+### Splitting the dataset into training and testing samples
+
+```{r}
+train_index <- createDataPartition(train$y, p = 0.7, list = FALSE)
+train_data <- train[train_index, ]
+test_data <- train[-train_index, ]
+```
+
+### Training the model on the training data
+
+```{r}
+qda_model <- train(y ~ ., 
+                   data = train_data, 
+                   method = "qda")
+```
+
+### Predictions on the test dataset
+
+```{r}
+qda_pred <- predict(qda_model, test_data)
+```
+
+### Model Evaluation - Performance Analysis on test dataset
+
+```{r}
+qda_conf_mat <- confusionMatrix(qda_pred, test_data$y)
+cat("\n### Resultts QDA ###\n")
+print(qda_conf_mat)
+```
+
+### Visualizing the decision boundaries
+
+The ***qda*** method constructs a quadratic decision boundary that can be represented graphically.
+Represent the decision boundary of the ***qda*** method.
+
+```{r}
+grid <- expand.grid(x1 = seq(min(test_data$x1), max(test_data$x1), length.out = 100),
+                    x2 = seq(min(test_data$x2), max(test_data$x2), length.out = 100))
+
+# Decision boundary for QDA
+grid$pred <- predict(qda_model, newdata = grid)
+ggplot() +
+    geom_point(data = test_data, aes(x = x1, y = x2, color = y), size = 3)   +
+    geom_tile(data = grid, aes(x = x1, y = x2, fill = pred), alpha = 0.3) +
+    labs(title = "Decision boundary - QDA", x = "Variable 1", y = "Variable 2") +
+    theme_minimal()
+```
+
+## Linear Discriminant Analysis by Hand
+
+In **linear discriminant analysis**, the covariance matrices are assumed to be equal.
+The covariance matrix estimator
+
+$$
+\Sigma=\Sigma_1=\Sigma_2
+$$
+is
+
+$$     
+\widehat \Sigma  = \frac 1n \sum_{k=1}^K n_k \widehat\Sigma_k \quad \text{avec} \quad \widehat \Sigma_k=\frac{1}{n_k} \sum_{i; y_i=k}(x_i-\widehat \mu_k)^\top (x_i-\widehat \mu_k).
+$$ 
+
+Estimate this matrix on the training dataset.
+
+```{r}
+n <- nrow(Xtrain)
+# class 1
+ind1 <- which(Ytrain==1)
+n1 <- length(ind1)
+pi1 <- n1/n
+mu1 <- colMeans(Xtrain[ind1,])
+
+# class 2
+ind2 <- which(Ytrain==2)
+n2 <- length(ind2)
+pi2 <- n2/n
+mu2 <- colMeans(Xtrain[ind2,])
+
+# Sigma common
+Sigma <- ((n1 - 1) * cov(Xtrain[ind1,]) + (n2 - 1) * cov(Xtrain[ind2,])) / (n1 + n2 - 2)
+```
+
+The Bayes decision rule (predicting the most probable class a posteriori) is then written:
+
+$$         
+g(x) = argmax_{k \in \{1,\cdots,K\}}\,L_k (x).
+$$ 
+
+with
+
+$$
+L_k (x)=x^\top \Sigma^{-1}\mu_k -\frac12 \mu_k ^\top \Sigma^{-1}\mu_k +\log \pi_k .
+$$
+
+where $L_k$ is then called **linear discriminant function**.
+
+We now want to predict the class of the new observation $x=(-1,1)$ with the linear discriminant analysis method.
+Calculate $L_{1}(x)$ and $L_{2}(x)$ and verify that $x$ is indeed assigned to class 2.
+
+```{r}
+x = c(-1,1)
+names(x) = c("x1","x2")
+L1 <- t(x) %*% solve(Sigma) %*% mu1 - 0.5 * t(mu1) %*% solve(Sigma) %*% mu1 + log(pi1)
+L2 <- t(x) %*% solve(Sigma) %*% mu2 - 0.5 * t(mu2) %*% solve(Sigma) %*% mu2 + log(pi2)
+L1
+L2
+```
+
+We also know that the posterior probabilities of the classes are calculated as follows:
+
+$$        
+\mathbb{P}(Y=k\vert X=x)= \frac{\exp (L_k(x))}{\sum_{\ell=1}^K \exp (L_\ell(x))}.
+$$ 
+
+Estimate the a posteriori probabilities for $x=(-1,1)$.
+
+```{r}
+prob1 <- exp(L1)/(exp(L1)+exp(L2))
+prob1
+prob2 <- exp(L2)/(exp(L1)+exp(L2))
+prob2
+```
+
+## Linear discriminant analysis with caret
+
+Now use the functions **lda** and **predict** to predict the class of the point $x=(-1,1)$ and estimate their posterior probabilities.
+Check that you find the results of the previous questions.
+
+### Training the model on the train data
+
+```{r}
+lda_model <- train(y ~ ., 
+                   data = train, 
+                   method = "lda")
+```
+
+### Prediction of the point $x=(-1,1)$
+
+```{r}
+x1 = -1
+x2 = 1
+x = c(x1,x2)
+head(predict(lda_model, x, "raw"))
+head(predict(lda_model, x, "prob"))
+```
+
+### Training the model on the training data
+
+```{r}
+lda_model <- train(y ~ ., 
+                   data = train_data, 
+                   method = "lda")
+```
+
+### Predictions on the test dataset
+
+```{r}
+predict(lda_model, test_data, type = "prob")
+lda_pred <- predict(lda_model, test_data, type = "raw")
+```
+
+```{r}
+# Build the LDA model with caret
+# lda_model <- train(Species ~ ., data = train_data, method = "lda")
+
+# Project the training data onto the LDA axes
+lda_final <- lda_model$finalModel
+lda_projection <- predict(lda_final, train_data[,-1]) # Projections
+
+# Organize projected data for visualization
+lda_data <- data.frame(lda_projection$x) # Scores LDA1, LDA2
+lda_data$y <- train_data$y  # Add the labels of the classes
+
+ggplot(lda_data, aes(x = LD1, fill = y)) +
+  geom_density(alpha = 0.6) +
+  labs(title = "Projection of the data on LD1",
+       x = "LD1", y = "Density") +
+  theme_minimal() +
+  theme(legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10))
+```
+
+### Model evaluation and performance analysis on test data
+
+```{r}
+lda_conf_mat <- confusionMatrix(lda_pred, test_data$y)
+cat("\n### Results LDA ###\n")
+print(lda_conf_mat)
+```
+
+
+### Visualization of the decision boundary
+
+```{r}
+# Decision boundary for LDA
+grid <- expand.grid(x1 = seq(min(test_data$x1), max(test_data$x1), length.out = 100),
+                    x2 = seq(min(test_data$x2), max(test_data$x2), length.out = 100))
+grid$pred <- predict(lda_model, newdata = grid)
+ggplot() +
+    geom_point(data = test_data, aes(x = x1, y = x2, color = y), size = 3)   +
+    geom_tile(data = grid, aes(x = x1, y = x2, fill = pred), alpha = 0.3) +
+    labs(title = "Decision boundary - LDA", x = "Variable 1", y = "Variable 2") +
+    theme_minimal()
+```
