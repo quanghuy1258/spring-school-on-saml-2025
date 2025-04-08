@@ -19,49 +19,49 @@ Trường học này dự kiến sẽ được tổ chức định kỳ trong nh
 
 ## Đối tượng tham dự
 
-Sinh viên ngành Toán (chuyên ngành xác suất-thống kê), ngành toán ứng dụng, sinh viên ngành khoa học dữ liệu từ năm ba trở lên;
-Học viên cao học, thạc sĩ, nghiên cứu sinh, tiến sĩ, sau tiến sĩ;
-Giảng viên, những đồng nghiệp của ngành Thống kê, ngành Khoa học dữ liệu quan tâm.
+- Sinh viên ngành Toán (chuyên ngành xác suất-thống kê), ngành toán ứng dụng, sinh viên ngành khoa học dữ liệu từ năm ba trở lên;
+- Học viên cao học, thạc sĩ, nghiên cứu sinh, tiến sĩ, sau tiến sĩ;
+- Giảng viên, những đồng nghiệp của ngành Thống kê, ngành Khoa học dữ liệu quan tâm.
 
 ## Ban chương trình:
 
-Agnès Lagnoux, University of Toulouse, France;
-Fabrice Gamboa, University of Toulouse, France;
-Hoàng Văn Hà, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
-Nguyễn Thị Mộng Ngọc, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM.
+- Agnès Lagnoux, University of Toulouse, France;
+- Fabrice Gamboa, University of Toulouse, France;
+- Hoàng Văn Hà, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
+- Nguyễn Thị Mộng Ngọc, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM.
 
 ## Ban tổ chức:
 
-Lê Minh Hà, Viện Nghiên cứu cao cấp về Toán;
-Trần Minh Triết, Trường ĐH Khoa học Tự nhiên, ĐHQG-HCM;
-Mai Hoàng Biên, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
-Võ Đức Cẩm Hải, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
-Hoàng Văn Hà, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
-Đặng Đức Trọng, Trường ĐH Khoa học Tự nhiên, ĐHQG-HCM;
-Nguyễn Thị Mộng Ngọc, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
-Agnès Lagnoux, University of Toulouse, France.
+- Lê Minh Hà, Viện Nghiên cứu cao cấp về Toán;
+- Trần Minh Triết, Trường ĐH Khoa học Tự nhiên, ĐHQG-HCM;
+- Mai Hoàng Biên, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
+- Võ Đức Cẩm Hải, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
+- Hoàng Văn Hà, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
+- Đặng Đức Trọng, Trường ĐH Khoa học Tự nhiên, ĐHQG-HCM;
+- Nguyễn Thị Mộng Ngọc, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM;
+- Agnès Lagnoux, University of Toulouse, France.
 
 ## Giảng viên:
 
-Agnès Lagnoux, University of Toulouse, France;
-François Chapon, University of Toulouse, France;
-Juliette Chevallier, University of Toulouse, France;
-Mathilde Mougeot, Paris-Saclay University and ENSIIE, France.
+- Agnès Lagnoux, University of Toulouse, France;
+- François Chapon, University of Toulouse, France;
+- Juliette Chevallier, University of Toulouse, France;
+- Mathilde Mougeot, Paris-Saclay University and ENSIIE, France.
 
 ## Cơ quan đồng tổ chức và tài trợ: 
 
-Viện Nghiên cứu cao cấp về Toán (VIASM);
-Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM (HCMUS);
-IRL France-VietNam in Mathematics and its Applications (IRL FVMA);
-Institute of Mathematics of Toulouse (IMT);
-Centre International de Mathématiques et Informatique de Toulouse (CIMI);
-Mathématiques et INteractions à Toulouse Graduate School (EUR MINT);
-Artificial and natural Intelligence Toulouse Institute (ANITI);
-ENSIIE, ENS-Paris-Saclay.
+- Viện Nghiên cứu cao cấp về Toán (VIASM);
+- Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM (HCMUS);
+- IRL France-VietNam in Mathematics and its Applications (IRL FVMA);
+- Institute of Mathematics of Toulouse (IMT);
+- Centre International de Mathématiques et Informatique de Toulouse (CIMI);
+- Mathématiques et INteractions à Toulouse Graduate School (EUR MINT);
+- Artificial and natural Intelligence Toulouse Institute (ANITI);
+- ENSIIE, ENS-Paris-Saclay.
 
 ## Ngôn ngữ: Tiếng Anh
 
 ## Liên hệ: 
 
-HCMUS: Nguyễn Thị Mộng Ngọc, ngtmngoc@hcmus.edu.vn;
-VIASM: Nguyễn Quang Huy, nqhuy@viasm.edu.vn.
+- HCMUS: Nguyễn Thị Mộng Ngọc, ngtmngoc@hcmus.edu.vn;
+- VIASM: Nguyễn Quang Huy, nqhuy@viasm.edu.vn.
