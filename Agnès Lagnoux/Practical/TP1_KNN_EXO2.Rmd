@@ -1,0 +1,422 @@
+---
+title: "Practical 1 - k-nearest-neighbors"
+author: "Agnès LAGNOUX & Nicolas SAVY"
+date: ""
+output: 
+  pdf_document:
+    highlight: tango  # Vous pouvez tester d'autres thèmes : kate, monochrome, etc.
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, out.width = "75%")
+```
+
+# Exercise 2 : ... on simulated data
+
+The objective of this exercise is to get to grips with the R **caret** package.
+The aim is to illustrate, on an example of simulated data, the different issues associated with $k$-nn, namely:
+
+- the issue of the number of classes
+
+- the search for the optimal number of classes
+
+- the issue of data pre-processing
+
+- the issue of prediction games test data / validation / prediction
+
+The data set is deliberately very simple.
+It is subdivided into three files available on IRIS in the section associated with this course.
+The files ***synth_train.txt*** for training the model, the file ***synth_valid.txt*** for validation and the file ***synth_test.txt*** for testing.
+These files contain 100 observations of the variables
+
+- $x_1$ quantitative
+- $x_2$ quantitative
+- $y$ qualitative representing the class of the observation.
+
+> Note: These files are of the same size so that the accuracy is not affected by the sample size.
+
+## Importing the data
+
+Load the training dataset ***synth_train.txt*** into R
+
+- either with the command **read.table**
+- or with the Rstudio import tool (Tools \> Import Dataset).
+
+Display the first data of the training sample.
+
+```{r}
+train <- read.table(file="synth_train.txt", header=TRUE)
+dim(train)
+head(train)
+```
+
+Transformation of $Y$ into a two-modality **factor** type variable.
+
+```{r}
+train$y = as.factor(train$y)
+```
+
+Load common packages for $k$-nn manipulation.
+
+```{r}
+library(class)
+library(caret)
+library(FNN)
+library(ggplot2)
+```
+
+## Graphical representation of the data
+
+Represent graphically  data using the **ggplot2** package.
+
+```{r}
+Xtrain <- train[,-1]        # explanatory variables
+Ytrain <- train$y           # class variable
+
+# Combine training data into a data frame
+train_data <- data.frame(X1 = Xtrain[,1], X2 = Xtrain[,2], Classe = factor(Ytrain))
+
+# Plot using ggplot2
+ggplot(train_data, aes(x = X1, y = X2, shape = Classe, color = Classe)) +
+  geom_point(size = 3) + 
+  # Choice of colors
+  scale_color_manual(values = c("red", "blue"), name = "Class") + 
+  # Choice of shapes (triangles and rounds)
+  scale_shape_manual(values = c(16, 17), name = "Class") +  
+  labs(title = "Visualisation of the classes", x = "X1", y = "X2") + 
+  theme_minimal() + 
+  theme(legend.position = "top") 
+```
+
+
+# Classification by $k$-nn with 15 neighbors
+
+## Use of the package caret for the training of a $k$-nn with 15 neighbors
+
+```{r}
+model_15 <- train(
+  y ~ .,                                       # Formula : target variable and predictors
+  data = train,                                # Data
+  method = "knn",                              # k-nn algorithm
+  tuneGrid = data.frame(k = 15)                # Number of neighbors
+)
+```
+
+## Graphical representation of the decision frontier for $k$ = 15 neighbors
+
+Represent graphically the decision boundary for $k$ = 15 neighbors: start by constructing a grid of points, predicting these points, then adding these points to the graph by coloring them according to their prediction.
+
+```{r}
+a <- seq(from=min(train$x1), to=max(train$x1), length.out=100)
+b <- seq(from=min(train$x2), to=max(train$x2), length.out=100)
+grille <- NULL
+for (i in a){ 
+  grille <- data.frame(rbind(grille, cbind(i,b)))
+}
+names(grille) = c("x1","x2")
+
+# Construction of a dataframe with the training data
+train_data <- data.frame(Xtrain, Ytrain = factor(Ytrain))
+pred_grille <- predict(model_15, grille, type = "raw")
+# Construction of a  dataframe with the grid and the predictions
+grid_data <- data.frame(grille, pred_grille = factor(pred_grille))
+
+ggplot() +
+  # Construction of the decision frintier
+  geom_point(data = grid_data, 
+             aes(x = grille[,1], y = grille[,2], color = pred_grille), 
+             alpha = 0.5, size = 0.5) +
+  # Positioning of the training points
+  geom_point(data = train_data, 
+             aes(x = Xtrain[,1], y = Xtrain[,2], shape = Ytrain, color = Ytrain),
+             size = 3) +
+  # Adding of the legend and the titles
+  scale_color_manual(values = c("red", "blue"), name = "Class") +
+  scale_shape_manual(values = c(16, 17), name = "Class") +
+  labs(title = "Decision frontier for k=15 neighbors", x = "X1", y = "X2") +
+  theme_minimal() +
+  theme(legend.position = "topright")
+```
+
+
+## Evaluation of the performances of the classification and role of the  validation dataset
+
+The performance of a classification is measured in terms of predictive performance, i.e. the ability of the algorithm to find classes on a labeled set.
+
+Predict the data of the training set with the model_15 classifier and compare with the real classes.
+Calculate the predictive performance indicators of this classifier.
+
+```{r}
+predictions = predict(model_15, Xtrain ,type = "raw")
+CM_15 = confusionMatrix(predictions, train$y)
+CM_15
+```
+
+
+Performance measurement should be done on a different dataset than the training dataset.
+Load the validation datasets ***synth_valid.txt*** into R.
+Display the first validation data.
+
+```{r}
+valid <- read.table(file="synth_valid.txt", header=TRUE)
+valid$y = as.factor(valid$y)
+head(valid)
+```
+
+Repeat the performance indicator calculations on the validation data and compare.
+
+```{r}
+predictions = predict(model_15, valid ,type = "raw")
+CM_15 = confusionMatrix(predictions, valid$y)
+CM_15
+```
+
+## Predicting the class of unannotated points
+
+Consider the points with coordinates (0,1) and (-0.75,1.5). We can predict the class with a $k$-nn with $k$ = 15 neighbors.
+
+```{r}
+Xnew <- as.data.frame(matrix(c(0,1,-0.75,1.5), nrow=2, byrow=TRUE))
+names(Xnew) = c("x1","x2")              
+# It is important that the variables have the same name as the training variables.
+```
+
+The predictions are therefore:
+
+```{r}
+# Prediction results 
+predict(model_15, Xnew ,type = "raw")
+```
+
+To access the $k$-nn indices of a given point, you need to use the FNN package:
+
+```{r}
+KNN = get.knnx(data = Xtrain, query = Xnew, k = 15)
+KNN
+Ytrain[KNN$nn.index[1,]]
+Ytrain[KNN$nn.index[2,]]
+```
+
+
+## Role of preprocessing
+
+We said in class that not preprocessing data can also lead to an overestimation of performance measures in $k$-nns.
+Let's illustrate this phenomenon on these data.
+
+```{r}
+set.seed(123)                               # For reproducibility
+grid <- expand.grid(k = seq(1, 30, by = 1)) # Grid of values of k
+
+# Training the k-nn model without pre-processing
+knn_fit_raw <- train(
+y ~ ., # Formula: target variable and predictors
+data = train, # Dataset
+method = "knn", # k-nn algorithm
+tuneGrid = grid) # Grid of values for k
+
+# Training the k-nn model with pre-processing
+knn_fit_PP <- train(
+y ~ .,              # Formula: target variable and predictors
+data = train,       # Dataset
+method = "knn",     # k-nn algorithm
+preProcess = c("center", "scale"),
+tuneGrid = grid)    # Grid of values for k
+
+# Extract the performances of both models
+k_values_raw <- knn_fit_raw$results$k
+accuracy_raw <- knn_fit_raw$results$Accuracy
+k_values_PP <- knn_fit_PP$results$k
+accuracy_PP <- knn_fit_PP$results$Accuracy
+
+# Construction of a dataframe collecting the data
+data_raw <- data.frame(k_values = k_values_raw,
+ accuracy = accuracy_raw,
+ Data = "Raw Data")
+data_pp <- data.frame(k_values = k_values_PP,
+ accuracy = accuracy_PP,
+ Data = "Preprocessed Data")
+plot_data <- rbind(data_raw, data_pp)
+
+# Plot both curves on the same graph
+ggplot(plot_data, aes(x = k_values,
+ y = accuracy,
+ color = Data,
+ linetype = Data,
+ shape = Data)) +
+ geom_line(size = 1) +
+ geom_point(size = 3) +
+ labs(
+ title = "Precision depending on the number of neighbors (k)",
+ x = "Number of neighbors (k)",
+ y = "Precision",
+ color = "Data Type",
+ linetype = "Data Type",
+ shape = "Data Type"
+ ) +
+ scale_color_manual(values = c("blue", "red")) +
+ scale_linetype_manual(values = c(1, 2)) +
+ scale_shape_manual(values = c(16, 16)) +
+ theme_minimal() +
+ theme(legend.position = "top")
+```
+
+# Classification by $k$-nn with 1 neighbor
+
+```{r}
+model_1 <- train(
+y ~ .,                       # Formula: target variable and predictors
+data = train,                # Dataset
+method = "knn",              # k-nn algorithm
+tuneGrid = data.frame(k = 1) # Number of neighbors
+)
+
+# Plot of the decision boundary for k = 1 neighbor
+train_data <- data.frame(Xtrain, Ytrain = factor(Ytrain))
+pred_grille <- predict(model_1, grille, type = "raw")
+grid_data <- data.frame(grille, pred_grille = factor(pred_grille))
+
+ggplot() +
+geom_point(data = grid_data,
+aes(x = grille[,1], y = grille[,2], color = pred_grille),
+alpha = 0.5, size = 0.5) +
+geom_point(data = train_data,
+aes(x = Xtrain[,1], y = Xtrain[,2],
+shape = Ytrain, color = Ytrain), size = 3) +
+scale_color_manual(values = c("red", "blue"), name = "Class") +
+scale_shape_manual(values = c(16, 17), name = "Class") +
+labs(title = "Decision boundary for k=1 neighbor", x = "X1", y = "X2") +
+theme_minimal() +
+theme(legend.position = "topright")
+
+# Performance evaluation on training data
+predictions = predict(model_1, Xtrain ,type = "raw")
+CM_1 = confusionMatrix(predictions, train$y)
+CM_1
+
+# Performance evaluation on validation data
+predictions = predict(model_1, valid ,type = "raw")
+CM_1_valid = confusionMatrix(predictions, valid$y)
+CM_1_valid
+```
+
+# Finding the optimal number of classes by cross-validation
+
+## Measuring the impact of the number of neighbors on predictive performance
+
+Graphical representation of the empirical error as a function of the Number of neighbors for $k$ from 1 to 30.
+
+```{r}
+set.seed(123) # For reproducibility
+grid <- expand.grid(k = seq(1, 30, by = 1)) # Grid of values of k
+
+# Training the k-nn model
+knn_fit <- train(
+y ~ .,                  # Formula: target variable and predictors
+data = train,           # Data set
+method = "knn",         # k-NN algorithm
+tuneGrid = grid)        # Grid of values for k
+
+# Extract the results of the k-nn model
+results <- knn_fit$results
+
+# Creating the graph with ggplot2
+ggplot(results, aes(x = k, y = Accuracy)) +
+geom_line(color = "blue", size = 1) +
+geom_point(color = "red", size = 2) +
+labs(
+title = "Precision as a function of the number of neighbors (k)",
+x = "Number of neighbors (k)",
+y = "Precision"
+) +
+theme_minimal() +
+theme(
+plot.title = element_text(hjust = 0.5, size = 16),
+axis.title = element_text(size = 12)
+)
+```
+
+## Using the triptych Learning / Validation / Test
+
+To use the knn to make predictions, 3 data sets must be used:
+
+- ***synth_train.txt*** for learning,
+
+- ***synth_valid.txt*** for validation and choice of the number of classes by cross-validation,
+
+- the training of the final model is done from (***synth_train.txt + synth_valid.txt***) with the number of classes identified in the previous step,
+
+- ***synth_test.txt*** of the unannotated data that we want to predict.
+
+## Training models with the training set
+
+```{r}
+set.seed(123)
+grid <- expand.grid(k = seq(1, 30, by = 1)) # Grid of k values
+knn_model_validation <- train(
+y ~ ., data = train, method = "knn",
+trControl = trainControl(method = "cv", number = 10) ,
+tuneGrid = grid # Test k = 1, 2, ..., 30
+)
+```
+
+## Measuring model performance on validation data
+
+```{r}
+# Results on the validation set
+validationPredictions <- predict(knn_model_validation, newdata = valid)
+confusionMatrix(validationPredictions, valid$y)
+```
+
+## Identification of the best k 
+
+```{r}
+best_k <- knn_model_validation$bestTune$k
+cat("Best k found :", best_k, "\n")
+```
+
+## Training of the final model on the training data + the validation data 
+
+```{r}
+finalData <- rbind(train, valid)   # Union of the datasets
+set.seed(123)
+final_model <- train(
+  y ~ ., data = finalData, 
+  method = "knn",
+  tuneGrid = data.frame(k = best_k), # Use the best k
+  trControl = trainControl(method = "none")
+)
+```
+
+## Measuring the performance of the best model on test data
+
+```{r}
+test <- read.table(file="synth_test.txt", header=TRUE)
+test$y = as.factor(test$y)
+head(test)
+
+
+testPredictions <- predict(final_model, newdata = test)
+confusionMatrix(testPredictions, test$y)
+```
+
+## Back to the prediction of our new entries Xnew
+
+Calculate the predictions of the new entries with the final model retained.
+
+```{r}
+final_model$bestTune$k
+XfinalData = finalData[,-1]
+YfinalData = finalData$y
+KNN = get.knnx(data = XfinalData, query = Xnew, k = 4)
+KNN
+YfinalData[KNN$nn.index[1,]]
+YfinalData[KNN$nn.index[2,]]
+# Raw results
+predict(final_model, Xnew ,type = "raw")
+# Results in terms of probability
+predict(final_model, Xnew ,type = "prob")
+```

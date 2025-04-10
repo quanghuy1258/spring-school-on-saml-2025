@@ -1,0 +1,217 @@
+---
+title: "TP3 - k means"
+author: "Agnès LAGNOUX & Nicolas SAVY"
+date: ""
+output: 
+  pdf_document:
+    highlight: tango  # Vous pouvez tester d'autres thèmes : kate, monochrome, etc.
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(fig.width = 6, fig.height = 4, out.width = "75%")
+```
+
+## Exercise 2 : on simulated data
+
+### Load the required librairies
+
+```{r}
+library(cluster)      # Pour l'algorithme k-means
+library(factoextra)   # Pour la visualisation
+library(ggplot2)      # Pour la visualisation
+```
+
+### Generation of a simulated dataset with 3 clusters
+
+```{r}
+set.seed(123)
+n <- 150
+data <- data.frame(
+  x = c(rnorm(n, mean = 2, sd = 0.5), rnorm(n, mean = 6, sd = 0.5), rnorm(n, mean = 10, sd = 0.5)),
+  y = c(rnorm(n, mean = 2, sd = 0.5), rnorm(n, mean = 6, sd = 0.5), rnorm(n, mean = 10, sd = 0.5))
+)
+```
+
+
+
+```{r}
+head(data$x)
+length(data$x)
+```
+
+### Data visualization
+
+```{r}
+ggplot(data, aes(x, y)) +
+  geom_point() +
+  ggtitle("Données générées (sans regroupement)")
+
+```
+
+
+### Clustering with 3 clusters
+
+```{r}
+set.seed(123)
+kmeans_result_1 <- kmeans(data, centers = 3)
+data$kmeans_result_1 <- as.factor(kmeans_result_1$cluster)
+
+# Visualization of the results
+ggplot(data, aes(x = x, y = y, color = kmeans_result_1)) +
+  geom_point(size = 3)  + ylim(0,12) +
+  labs(title = "Results of k-means with outliers", color = "Cluster") +
+  theme_minimal()
+
+```
+
+
+### Importance of renormalization
+
+The $k$-means method relies on distance calculations (usually the Euclidean distance) to group points into clusters. If the variables have different scales, those with larger amplitudes will have a disproportionate influence on the calculation of distances, which can distort the clustering results.
+
+Example:
+
+- If one variable is measured in kilometers and another in meters, the first will dominate the calculations.
+
+- Renormalizing (often using standardization or normalization) allows to put all variables on the same scale, preventing some variables from biasing the distances.
+
+```{r}
+# Adding a variable with a different scale
+# We now consider points of R^3 and no more of R^2
+
+data$z <- c(rnorm(2 * n, mean = 50, sd = 5), rnorm(n, mean = 100, sd = 5))
+head(data)
+```
+```{r}
+# Comparison with and without renormalisation
+# k-means without renormalization
+kmeans_no_scaling <- kmeans(data, centers = 3, nstart = 25)
+data$cluster_no_scaling <- as.factor(kmeans_no_scaling$cluster)
+
+# k-means with renormalization
+data_scaled <- scale(data[,c(1,2,4)])
+kmeans_scaling <- kmeans(data_scaled, centers = 3, nstart = 25)
+data$cluster_scaling <- as.factor(kmeans_scaling$cluster)
+
+# Data visualization
+p1 <- ggplot(data, aes(x, y, color = cluster_no_scaling)) +
+  geom_point() +
+  ggtitle("Clustering without renormalization") +
+  theme(legend.position = "none")
+
+p2 <- ggplot(data, aes(x, y, color = cluster_scaling)) +
+  geom_point() +
+  ggtitle("Clustering avec renormalisation") + 
+  theme(legend.position = "none")
+
+library(gridExtra)
+grid.arrange(p1, p2, ncol = 2)
+```
+```{r}
+head(data)
+head(data_scaled)
+
+dim(data)
+dim(data_scaled)
+
+data_scaled[400,]
+```
+
+### Choosing $k$: elbow method
+
+The elbow method aims to determine the optimal number of clusters ($k$) by visualizing the relationship between the number of clusters and the total intra-cluster inertia (tot.withinss).
+
+- **Observation**: We generally observe a rapid decrease in inertia when $k$ increases, followed by a slowdown.
+
+- **Elbow Point**: The "elbow" of the graph corresponds to the point where adding an additional cluster no longer significantly improves the reduction of inertia. This point indicates the optimal number of clusters. In the given example, the elbow is observed at $k$=3, which suggests that 3 clusters are appropriate for the data... this is a bit of the expected result...
+
+```{r}
+# Calculating intra-cluster inertia for different numbers of clusters
+set.seed(123)
+inertias <- sapply(1:10, function(k) {
+  kmeans(scale(data[,c(1,2)]), centers = k, nstart = 25)$tot.withinss
+})
+
+# Visualization of the elbow criterion
+plot(1:10, inertias, type = "b", pch = 19, frame = FALSE,
+     xlab = "Number k of clusters", ylab = "Intra-cluster inertia",
+     main = "Méthode du coude pour choisir k")
+abline(v = 3, lty = 2, col = "red")
+```
+
+### Clusters Parameter
+
+Once the choice of number of clusters is made, an important parameter is the center of the clusters.
+
+```{r}
+kmeans_result_1 <- kmeans(data[,c(1,2)], centers = 3)
+kmeans_result_1$centers
+```
+
+A relevant visualization is the graph of clusters enriched with the center and confidence ellipses or the envelope of the data by ***xcluster***.
+
+
+```{r}
+fviz_cluster(kmeans_result_1, data = data[,c(1,2)], 
+             labelsize = 0,
+             palette=c("red", "blue", "black"),
+             ellipse.type = "t",
+             star.plot = F,
+             repel = F,
+             ggtheme = theme_minimal())
+```
+
+```{r}
+fviz_cluster(kmeans_result_1, data = data[,c(1,2)], 
+             labelsize = 0,
+             palette=c("red", "blue", "black"),
+             ggtheme = theme_minimal(),
+             star.plot = F,
+             repel = F,
+             main = "Partitioning Clustering Plot"
+             )
+```
+
+### Performance measures
+
+The silhouette index measures the quality of clustering for each point. It is calculated from two distances:
+
+- $a(i)$ : average distance between a point $i$ and the other points of its own cluster.
+
+- $b(i)$ : average distance between a point $i$ and the points of the nearest neighboring cluster.
+
+The silhouette for a point $i$ is given by:
+
+$$
+s(i) = \frac{b(i) - a(i)}{\max (a(i) - b(i) )}
+$$
+
+
+$s(i)$ is between -1 and 1.
+
+- $s(i) \approx 1$ : $i$ is well assigned to its cluster.
+
+- $s(i) \approx 0$ : $i$ is close to the boundary between two clusters.
+
+- $s(i) \approx -1$ : $i$ is probably misassigned.
+
+**Global interpretation** : The average silhouette index gives an overall measure of the quality of the clustering. The closer the average index is to 1, the better the clustering. A value lower than 0.5 indicates that the cluster structure is weak or poorly defined.
+
+```{r}
+# Silhouette computation
+set.seed(123)
+final_kmeans <- kmeans(scale(data[,c(1,2)]), centers = 3, nstart = 25)
+silhouette_scores <- silhouette(final_kmeans$cluster, dist(scale(data[,c(1,2)])))
+
+# Silouhette visualization
+fviz_silhouette(silhouette_scores) +
+  ggtitle("Silouhette analyse")
+
+# Displaying the average silhouette index
+mean_silhouette <- mean(silhouette_scores[, 3])
+cat("Average silhouette index:", round(mean_silhouette, 2))
+```
