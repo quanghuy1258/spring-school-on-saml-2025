@@ -46,7 +46,7 @@ Trường học này dự kiến sẽ được tổ chức định kỳ trong nh
 - Agnès Lagnoux, University of Toulouse, France; [materials](https://perso.math.univ-toulouse.fr/lagnoux/enseignements/).
 - François Chapon, University of Toulouse, France; [materials](https://www.math.univ-toulouse.fr/~fchapon/research.html).
 - Juliette Chevallier, University of Toulouse, France; [materials](https://plmlab.math.cnrs.fr/chevallier-teaching/hcmus-springschool-computationalstatistics).
-- Mathilde Mougeot, Paris-Saclay University and ENSIIE, France; [materials](https://sites.google.com/site/mougeotmathilde/teaching) where password (if have any) is `VNUHCMC2025`.
+- Mathilde Mougeot, Paris-Saclay University and ENSIIE, France; [materials](https://sites.google.com/site/mougeotmathilde/teaching) where password (if any) is `VNUHCMC2025`.
 
 ## Cơ quan đồng tổ chức và tài trợ: 
 
