@@ -20,9 +20,9 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, out.width = "75%")
 ### Load the required librairies
 
 ```{r}
-library(cluster)      # Pour l'algorithme k-means
-library(factoextra)   # Pour la visualisation
-library(ggplot2)      # Pour la visualisation
+library(cluster)      # k-means algorithm
+library(factoextra)   # visualisation
+library(ggplot2)      # visualisation
 ```
 
 ### Generation of a simulated dataset with 3 clusters
@@ -48,7 +48,7 @@ length(data$x)
 ```{r}
 ggplot(data, aes(x, y)) +
   geom_point() +
-  ggtitle("Données générées (sans regroupement)")
+  ggtitle("Simulated data (withour grouping)")
 
 ```
 
@@ -105,7 +105,7 @@ p1 <- ggplot(data, aes(x, y, color = cluster_no_scaling)) +
 
 p2 <- ggplot(data, aes(x, y, color = cluster_scaling)) +
   geom_point() +
-  ggtitle("Clustering avec renormalisation") + 
+  ggtitle("Clustering with renormalisation") + 
   theme(legend.position = "none")
 
 library(gridExtra)
@@ -139,7 +139,7 @@ inertias <- sapply(1:10, function(k) {
 # Visualization of the elbow criterion
 plot(1:10, inertias, type = "b", pch = 19, frame = FALSE,
      xlab = "Number k of clusters", ylab = "Intra-cluster inertia",
-     main = "Méthode du coude pour choisir k")
+     main = "Elbow method to choose k")
 abline(v = 3, lty = 2, col = "red")
 ```
 
@@ -209,7 +209,7 @@ silhouette_scores <- silhouette(final_kmeans$cluster, dist(scale(data[,c(1,2)]))
 
 # Silouhette visualization
 fviz_silhouette(silhouette_scores) +
-  ggtitle("Silouhette analyse")
+  ggtitle("Silouhette analysis")
 
 # Displaying the average silhouette index
 mean_silhouette <- mean(silhouette_scores[, 3])

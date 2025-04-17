@@ -1,5 +1,5 @@
 ---
-title: "Practical 4 - Hierarchical ascending classification"
+title: "Practical 4 - Hierarchical clustrering analysis"
 author: "Agnès LAGNOUX & Nicolas SAVY"
 date: ""
 output: 
@@ -52,14 +52,22 @@ ggplot(X, aes(x = X1, y = X2)) +
   labs(title = "Points cloud", x = "X1", y = "X2")
 ```
 
-3.  Construct the hierarchy with the maximal link.
+3.  Construct the hierarchy with the maximal linkage.
 
 ```{r}
-d <- dist(X)                          # compute the Euclidean distances between points
+XX = cbind(c(5, 4, 1, 0),c(4, 5, -2, -3))
+print(XX)
+
+dist(XX)
+```
+
+```{r}
+d <- dist(XX)                          # compute the Euclidean distances between points
+print(d)
 treeC <- hclust(d, method="complete") # all the results are stored in the object named tree
 ```
 
-4.  Determiner the heights of the classes.
+4.  Determine the heights of the classes.
 
 ```{r}
 treeC$height # give the height of the classes in the dendogram
@@ -68,20 +76,23 @@ treeC$height # give the height of the classes in the dendogram
 5.  Represent the dendrogram of such hierarchy.
 
 ```{r out.width="75%"}
-plot(treeC, main="Maximal link's HAC", xlab ="", sub="", hang=-1)
+plot(treeC, main="Maximal linkage's HCA", xlab ="", sub="", hang=-1)
 ```
 
-6.  Cut the dendrogram to get the partition in two classes of the maximal link's HAC.
+6.  Cut the dendrogram to get the partition in two classes of the maximal linkage's HCA.
 
 ```{r}
 cutree(treeC, k=2 )  # allow to obtain the partition in two classes
 # here, the two classes are C1={1,2} et C2={3,4}
 ```
 
-7.  Construct now Ward's hiérarchy and retrieve the lengths of Exercise 1.
+7.  Construct now Ward's hierarchy and retrieve the lengths of Exercise 1.
 
 ```{r}
-treeW <- hclust(d, method="ward.D2")
+# To really find the dendrogram of Ward, it is necessary to use the method "ward. D" with the square of the euclidean distances divided by 2
+
+treeW <- hclust(d^2/2, method="ward.D")
+treeW$height
 sum(treeW$height)
 ```
 
@@ -93,7 +104,7 @@ the tree is worth 67, that is to say the total inertia (here the sum of the tota
 8.  Represent the dendrogram of such hierarchy.
 
 ```{r out.width="75%"}
-plot(treeW, main="Ward's HAC", xlab ="", sub="",hang=-1)
+plot(treeW, main="Ward's HCA", xlab ="", sub="",hang=-1)
 cutree(treeW,k = 2) # we find again the two classes C1={1,2} et C2={3,4}
 ```
 

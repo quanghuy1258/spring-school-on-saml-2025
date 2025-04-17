@@ -17,19 +17,20 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 4, out.width = "75%")
 
 # Exercise 2 : ... on simulated data
 
-The objective of this exercise is to get to grips with the R **caret** package.
+The objective of this exercise is to get familiar with the R **caret** package.
 The aim is to illustrate, on an example of simulated data, the different issues associated with $k$-nn, namely:
 
-- the issue of the number of classes
+- the issue of the number of classes,
 
-- the search for the optimal number of classes
+- the search for the optimal number of classes,
 
-- the issue of data pre-processing
+- the issue of data pre-processing,
 
-- the issue of prediction games test data / validation / prediction
+- the issue of prediction games test data / validation / prediction.
 
 The data set is deliberately very simple.
-It is subdivided into three files available on IRIS in the section associated with this course.
+It is subdivided into three files available on my webpage: https://perso.math.univ-toulouse.fr/lagnoux/enseignements/.
+
 The files ***synth_train.txt*** for training the model, the file ***synth_valid.txt*** for validation and the file ***synth_test.txt*** for testing.
 These files contain 100 observations of the variables
 
@@ -37,7 +38,7 @@ These files contain 100 observations of the variables
 - $x_2$ quantitative
 - $y$ qualitative representing the class of the observation.
 
-> Note: These files are of the same size so that the accuracy is not affected by the sample size.
+Note: These files are of the same size so that the accuracy is not affected by the sample size.
 
 ## Importing the data
 
@@ -45,6 +46,8 @@ Load the training dataset ***synth_train.txt*** into R
 
 - either with the command **read.table**
 - or with the Rstudio import tool (Tools \> Import Dataset).
+
+Do not forget to change your working durectory so that you can load the data files !!!
 
 Display the first data of the training sample.
 
@@ -74,8 +77,8 @@ library(ggplot2)
 Represent graphically  data using the **ggplot2** package.
 
 ```{r}
-Xtrain <- train[,-1]        # explanatory variables
-Ytrain <- train$y           # class variable
+Xtrain <- train[,-1]        # Explanatory variables
+Ytrain <- train$y           # Class variable
 
 # Combine training data into a data frame
 train_data <- data.frame(X1 = Xtrain[,1], X2 = Xtrain[,2], Classe = factor(Ytrain))
@@ -100,7 +103,7 @@ ggplot(train_data, aes(x = X1, y = X2, shape = Classe, color = Classe)) +
 ```{r}
 model_15 <- train(
   y ~ .,                                       # Formula : target variable and predictors
-  data = train,                                # Data
+  data = train,                                # Training dataset
   method = "knn",                              # k-nn algorithm
   tuneGrid = data.frame(k = 15)                # Number of neighbors
 )
@@ -113,22 +116,22 @@ Represent graphically the decision boundary for $k$ = 15 neighbors: start by con
 ```{r}
 a <- seq(from=min(train$x1), to=max(train$x1), length.out=100)
 b <- seq(from=min(train$x2), to=max(train$x2), length.out=100)
-grille <- NULL
+grid2 <- NULL
 for (i in a){ 
-  grille <- data.frame(rbind(grille, cbind(i,b)))
+  grid2 <- data.frame(rbind(grid2, cbind(i,b)))
 }
-names(grille) = c("x1","x2")
+names(grid2) = c("x1","x2")
 
 # Construction of a dataframe with the training data
 train_data <- data.frame(Xtrain, Ytrain = factor(Ytrain))
-pred_grille <- predict(model_15, grille, type = "raw")
+pred_grid2 <- predict(model_15, grid2, type = "raw")
 # Construction of a  dataframe with the grid and the predictions
-grid_data <- data.frame(grille, pred_grille = factor(pred_grille))
+grid_data <- data.frame(grid2, pred_grid2 = factor(pred_grid2))
 
 ggplot() +
   # Construction of the decision frintier
   geom_point(data = grid_data, 
-             aes(x = grille[,1], y = grille[,2], color = pred_grille), 
+             aes(x = grid2[,1], y = grid2[,2], color = pred_grid2), 
              alpha = 0.5, size = 0.5) +
   # Positioning of the training points
   geom_point(data = train_data, 
@@ -158,7 +161,7 @@ CM_15
 
 
 Performance measurement should be done on a different dataset than the training dataset.
-Load the validation datasets ***synth_valid.txt*** into R.
+Load the validation dataset ***synth_valid.txt*** into R.
 Display the first validation data.
 
 ```{r}
@@ -167,7 +170,7 @@ valid$y = as.factor(valid$y)
 head(valid)
 ```
 
-Repeat the performance indicator calculations on the validation data and compare.
+Repeat the performance indicator calculations on the validation dataset and compare.
 
 ```{r}
 predictions = predict(model_15, valid ,type = "raw")
@@ -221,7 +224,7 @@ tuneGrid = grid) # Grid of values for k
 # Training the k-nn model with pre-processing
 knn_fit_PP <- train(
 y ~ .,              # Formula: target variable and predictors
-data = train,       # Dataset
+data = train,       # Training dataset
 method = "knn",     # k-nn algorithm
 preProcess = c("center", "scale"),
 tuneGrid = grid)    # Grid of values for k
@@ -250,9 +253,9 @@ ggplot(plot_data, aes(x = k_values,
  geom_line(size = 1) +
  geom_point(size = 3) +
  labs(
- title = "Precision depending on the number of neighbors (k)",
+ title = "Accuracy depending on the number of neighbors (k)",
  x = "Number of neighbors (k)",
- y = "Precision",
+ y = "Accuracy",
  color = "Data Type",
  linetype = "Data Type",
  shape = "Data Type"
@@ -269,19 +272,19 @@ ggplot(plot_data, aes(x = k_values,
 ```{r}
 model_1 <- train(
 y ~ .,                       # Formula: target variable and predictors
-data = train,                # Dataset
+data = train,                # Training dataset
 method = "knn",              # k-nn algorithm
 tuneGrid = data.frame(k = 1) # Number of neighbors
 )
 
 # Plot of the decision boundary for k = 1 neighbor
 train_data <- data.frame(Xtrain, Ytrain = factor(Ytrain))
-pred_grille <- predict(model_1, grille, type = "raw")
-grid_data <- data.frame(grille, pred_grille = factor(pred_grille))
+pred_grid2 <- predict(model_1, grid2, type = "raw")
+grid_data <- data.frame(grid2, pred_grid2 = factor(pred_grid2))
 
 ggplot() +
 geom_point(data = grid_data,
-aes(x = grille[,1], y = grille[,2], color = pred_grille),
+aes(x = grid2[,1], y = grid2[,2], color = pred_grid2),
 alpha = 0.5, size = 0.5) +
 geom_point(data = train_data,
 aes(x = Xtrain[,1], y = Xtrain[,2],
@@ -307,7 +310,7 @@ CM_1_valid
 
 ## Measuring the impact of the number of neighbors on predictive performance
 
-Graphical representation of the empirical error as a function of the Number of neighbors for $k$ from 1 to 30.
+Graphical representation of the empirical error as a function of the number of neighbors for $k$ from 1 to 30.
 
 ```{r}
 set.seed(123) # For reproducibility
@@ -316,7 +319,7 @@ grid <- expand.grid(k = seq(1, 30, by = 1)) # Grid of values of k
 # Training the k-nn model
 knn_fit <- train(
 y ~ .,                  # Formula: target variable and predictors
-data = train,           # Data set
+data = train,           # Training dataset
 method = "knn",         # k-NN algorithm
 tuneGrid = grid)        # Grid of values for k
 
@@ -328,9 +331,9 @@ ggplot(results, aes(x = k, y = Accuracy)) +
 geom_line(color = "blue", size = 1) +
 geom_point(color = "red", size = 2) +
 labs(
-title = "Precision as a function of the number of neighbors (k)",
+title = "Accuracy as a function of the number of neighbors (k)",
 x = "Number of neighbors (k)",
-y = "Precision"
+y = "Accuracy"
 ) +
 theme_minimal() +
 theme(
@@ -341,7 +344,7 @@ axis.title = element_text(size = 12)
 
 ## Using the triptych Learning / Validation / Test
 
-To use the knn to make predictions, 3 data sets must be used:
+To properly use the $k$-nn to make predictions, 3 datasets must be used:
 
 - ***synth_train.txt*** for learning,
 
@@ -349,7 +352,7 @@ To use the knn to make predictions, 3 data sets must be used:
 
 - the training of the final model is done from (***synth_train.txt + synth_valid.txt***) with the number of classes identified in the previous step,
 
-- ***synth_test.txt*** of the unannotated data that we want to predict.
+- ***synth_test.txt*** of the unlabeled data that we want to predict.
 
 ## Training models with the training set
 
